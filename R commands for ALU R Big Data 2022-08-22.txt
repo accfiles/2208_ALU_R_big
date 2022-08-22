@@ -1,0 +1,110 @@
+Open RStudio and run these commands to install packages/etc:
+R commands below here:
+###### CDC Big Data Class Installation ######
+
+
+## Note: everytime you run install.packages(...) R throws a warning asking you to install RTOOLS to build packages,
+## You don't need to do this generally if you are installing packages that don't need compiling
+## You can ignore those warnings for these packages - they dont need it.
+
+
+######### General data science packages ###########
+## install needed packages
+package_list <-
+  c("data.table", "ggplot2", "tidyverse", "Hmisc", "readr", "dplyr",
+    "readxl", "haven", "reshape2", "GGally", "gapminder", "tidyr",
+    "MASS", "magrittr", "stringr", "car", "effects", "AER","broom",
+    "rvest", "Matrix", "devtools", "purrr","HSAUR3","lubridate",
+    "skimr")
+install.packages(package_list)
+
+
+###### install duckDB #########
+install.packages("duckdb")
+library("DBI")
+con = dbConnect(duckdb::duckdb(), ":memory:")
+dbWriteTable(con, "iris", iris)
+dbGetQuery(con, 'SELECT "Species", MIN("Sepal.Width") FROM iris GROUP BY "Species"')
+
+###### install mlr3 ###########
+mlr3_package_list <-
+  c('mlr3verse','mlr3pipelines','mlr3measures',
+    'paradox','bbotk','mlr3misc','mlr3fselect',
+    'mlr3hyperband','mlr3tuning','smotefamily','mlr3data',
+    'mlr3tuningspaces','OpenML','future',
+    "glmnet", "caret", "Hmisc", "AER", "mlbench",
+    "kernlab","caTools", "randomForest", "MASS")
+install.packages(mlr3_package_list)
+
+
+###### install h2o ############
+## h2o requires JAVA - install version (one of these): 17, 16, 15, 14, 13, 12, 11, 10, 9, 8
+## install h2o
+# The following two commands remove any previously installed H2O packages for R.
+if ("package:h2o" %in% search()) { detach("package:h2o", unload=TRUE) }
+if ("h2o" %in% rownames(installed.packages())) { remove.packages("h2o") }
+
+# Next, we download packages that H2O depends on.
+pkgs <- c("RCurl","jsonlite")
+for (pkg in pkgs) {
+  if (! (pkg %in% rownames(installed.packages()))) { install.packages(pkg) }
+}
+
+### Now we download, install and initialize the H2O package for R.
+# install from source, requires RTOOLS and build, but version will be newer
+install.packages("h2o", type="source", repos=(c("http://h2o-release.s3.amazonaws.com/h2o/latest_stable_R")))
+
+# Finally, let's load H2O and start up an H2O cluster
+library(h2o)
+h2o.init()
+
+## run demo to test
+demo(h2o.glm)
+
+###### install spark ###########
+## system pre-reqs:
+# spark requires JAVA 8 or 11
+# spark requires Microsoft Visual C++ 2010 SP1 Redistributable Package:
+# https://www.microsoft.com/en-us/download/details.aspx?id=26999
+
+install.packages('sparklyr')
+# where will this be installed?
+sparklyr::spark_install_dir()
+# is spark already installed? 0 row result indicates no installation
+sparklyr::spark_installed_versions()
+# check available versions for install
+sparklyr::spark_available_versions()
+# install one of these versions if you need/want to
+sparklyr::spark_install(version = '3.1')
+# confirm installed
+sparklyr::spark_installed_versions()
+# directory from latest installed version (or you can pick a different spark version)
+home_folder_path <-
+  tail(sparklyr::spark_installed_versions(),1)$dir
+home_folder_path
+# set spark_home
+sparklyr::spark_home_set(home_folder_path)
+# check spark home
+Sys.getenv('SPARK_HOME')
+
+## two ways to use R with spark - either 'sparklyr' or 'sparkr'
+# load/demo with sparklyr
+library(sparklyr)
+sc <- spark_connect(master = "local")
+spark_iris <- copy_to(sc, iris)
+
+
+# load/demo with sparkr (SPARK_HOME does not need to be set)
+library(SparkR,
+        lib.loc = file.path(Sys.getenv('SPARK_HOME'),
+                            "R",
+                            "lib"))
+# initialize session
+sparkR.session(master = "local[*]",
+               sparkConfig = list(spark.driver.memory = "2g"))
+df <- as.DataFrame(faithful)
+
+# Displays the first part of the SparkDataFrame
+head(df)
+
+
